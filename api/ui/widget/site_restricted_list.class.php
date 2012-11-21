@@ -3,7 +3,6 @@
  * site_restricted_list.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -12,8 +11,6 @@ use cenozo\lib, cenozo\log;
 
 /**
  * Base class for all list widgets which may be restricted by site.
- * 
- * @package cenozo\ui
  */
 abstract class site_restricted_list extends base_list
 {
@@ -55,8 +52,14 @@ abstract class site_restricted_list extends base_list
     }
     
     // if restricted, show the site's name in the heading
-    $predicate = is_null( $this->db_restrict_site ) ? 'all sites' : $this->db_restrict_site->name;
-    $this->set_heading( $this->get_heading().' for '.$predicate );
+    if( is_null( $this->get_heading() ) )
+    {
+      $this->set_heading(
+        sprintf( '%s list for %s',
+                 $this->get_subject(),
+                 is_null( $this->db_restrict_site ) ?
+                   'all sites' : $this->db_restrict_site->name ) );
+    }
   }
   
   /**
@@ -107,7 +110,7 @@ abstract class site_restricted_list extends base_list
    * @return int
    * @access protected
    */
-  protected function determine_record_count( $modifier = NULL )
+  public function determine_record_count( $modifier = NULL )
   {
     if( !is_null( $this->db_restrict_site ) )
     {
@@ -126,7 +129,7 @@ abstract class site_restricted_list extends base_list
    * @return array( record )
    * @access protected
    */
-  protected function determine_record_list( $modifier = NULL )
+  public function determine_record_list( $modifier = NULL )
   {
     if( !is_null( $this->db_restrict_site ) )
     {

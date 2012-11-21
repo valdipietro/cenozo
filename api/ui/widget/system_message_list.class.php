@@ -3,7 +3,6 @@
  * system_message_list.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -12,8 +11,6 @@ use cenozo\lib, cenozo\log;
 
 /**
  * widget system_message list
- * 
- * @package cenozo\ui
  */
 class system_message_list extends site_restricted_list
 {
@@ -41,8 +38,8 @@ class system_message_list extends site_restricted_list
   {
     parent::prepare();
 
-    $this->add_column( 'site.name', 'string', 'Site', true );
-    $this->add_column( 'role.name', 'string', 'Role', true );
+    $this->add_column( 'site.name', 'string', 'Site', false );
+    $this->add_column( 'role.name', 'string', 'Role', false );
     $this->add_column( 'title', 'string', 'Title', true );
   }
   
@@ -77,7 +74,7 @@ class system_message_list extends site_restricted_list
    * @return int
    * @access protected
    */
-  protected function determine_record_count( $modifier = NULL )
+  public function determine_record_count( $modifier = NULL )
   {
     if( !is_null( $this->db_restrict_site ) )
     {
@@ -100,7 +97,7 @@ class system_message_list extends site_restricted_list
    * @return array( record )
    * @access protected
    */
-  protected function determine_record_list( $modifier = NULL )
+  public function determine_record_list( $modifier = NULL )
   {
     if( !is_null( $this->db_restrict_site ) )
     {

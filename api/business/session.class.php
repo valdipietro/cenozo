@@ -3,7 +3,6 @@
  * session.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\business
  * @filesource
  */
 
@@ -15,7 +14,6 @@ use cenozo\lib, cenozo\log;
  *
  * The session class is used to track all information from the time a user logs into the system
  * until they log out.
- * @package cenozo\business
  */
 class session extends \cenozo\singleton
 {
@@ -273,12 +271,7 @@ class session extends \cenozo\singleton
         // ignore permission errors and try the code below to find access for this user
         catch( \cenozo\exception\permission $e )
         {
-          log::err( sprintf(
-            'User %s tried to access site/role ids %d/%d but do not have permission, '.
-            'trying alternative sites/roles instead.',
-            $this->user->name,
-            $_SESSION['current_site_id'],
-            $_SESSION['current_role_id'] ) );
+          // no need to log this interaction
         }
       }
       

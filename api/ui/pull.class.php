@@ -3,7 +3,6 @@
  * pull.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -12,8 +11,6 @@ use cenozo\lib, cenozo\log;
 
 /**
  * The base class of all pull operationst.
- * 
- * @package cenozo\ui
  */
 abstract class pull extends operation
 {
@@ -29,6 +26,24 @@ abstract class pull extends operation
   public function __construct( $subject, $name, $args )
   {
     parent::__construct( 'pull', $subject, $name, $args );
+  }
+
+  /** 
+   * Processes arguments, preparing them for the operation.
+   * 
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @throws exception\notice
+   * @access protected
+   */
+  protected function prepare()
+  {
+    // unserialise the argument "modifier" into a modifier object if it exists
+    $modifier = $this->get_argument( 'modifier', NULL );
+    if( !is_null( $modifier ) && is_string( $modifier ) )
+    {
+      $this->modifier = unserialize( $modifier );
+      unset( $this->argument['modifier'] );
+    }
   }
 
   /**
@@ -53,5 +68,12 @@ abstract class pull extends operation
    * @access public
    */
   abstract public function get_data_type();
+
+  /**
+   * The modifier received with the pull, if one was received
+   * @var database\modifier
+   * @access protected
+   */
+  protected $modifier = NULL;
 }
 ?>

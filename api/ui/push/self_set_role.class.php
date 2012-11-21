@@ -3,7 +3,6 @@
  * self_set_role.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -15,7 +14,6 @@ use cenozo\lib, cenozo\log;
  * 
  * Changes the current user's role.
  * Arguments must include 'role'.
- * @package cenozo\ui
  */
 class self_set_role extends \cenozo\ui\push
 {
@@ -31,24 +29,19 @@ class self_set_role extends \cenozo\ui\push
   }
   
   /**
-   * Executes the push.
+   * This method executes the operation's purpose.
+   * 
    * @author Patrick Emond <emondpd@mcmaster.ca>
-   * @throws exception\runtime
    * @access protected
    */
-  protected function finish()
+  protected function execute()
   {
-    try
-    {
-      $db_role = lib::create( 'database\role', $this->get_argument( 'id' ) );
-    } 
-    catch( \cenozo\exception\runtime $e )
-    {
-      throw lib::create( 'exception\argument', 'id', $this->get_argument( 'id' ), __METHOD__, $e );
-    }
-    
+    parent::execute();
+
     $session = lib::create( 'business\session' );
-    $session->set_site_and_role( $session->get_site(), $db_role );
+    $db_site = $session->get_site();
+    $db_role = lib::create( 'database\role', $this->get_argument( 'id' ) );
+    $session->set_site_and_role( $db_site, $db_role );
   }
 }
 ?>

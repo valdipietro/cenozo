@@ -3,7 +3,6 @@
  * role_view.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -12,8 +11,6 @@ use cenozo\lib, cenozo\log;
 
 /**
  * widget role view
- * 
- * @package cenozo\ui
  */
 class role_view extends base_view
 {
@@ -45,18 +42,10 @@ class role_view extends base_view
     $this->add_item( 'name', 'string', 'Name' );
     $this->add_item( 'users', 'constant', 'Number of users' );
 
-    try
-    {
-      // create the operation sub-list widget
-      $this->operation_list = lib::create( 'ui\widget\operation_list', $this->arguments );
-      $this->operation_list->set_parent( $this );
-      $this->operation_list->remove_column( 'restricted' );
-      $this->operation_list->set_heading( 'Operations belonging to this role' );
-    }
-    catch( \cenozo\exception\permission $e )
-    {
-      $this->operation_list = NULL;
-    }
+    // create the operation sub-list widget
+    $this->operation_list = lib::create( 'ui\widget\operation_list', $this->arguments );
+    $this->operation_list->set_parent( $this );
+    $this->operation_list->set_heading( 'Operations belonging to this role' );
   }
 
   /**
@@ -74,11 +63,14 @@ class role_view extends base_view
     $this->set_item( 'users', $this->get_record()->get_user_count() );
 
     // process the child widgets
-    if( !is_null( $this->operation_list ) )
+    try
     {
       $this->operation_list->process();
+      $this->operation_list->remove_column( 'restricted' );
+      $this->operation_list->execute();
       $this->set_variable( 'operation_list', $this->operation_list->get_variables() );
     }
+    catch( \cenozo\exception\permission $e ) {}
   }
 
   /**

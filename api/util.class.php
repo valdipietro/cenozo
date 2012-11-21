@@ -3,7 +3,6 @@
  * util.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo
  * @filesource
  */
 
@@ -16,7 +15,6 @@ use cenozo\lib, cenozo\log;
  * This class is where all utility functions belong.  The class cannot be instantiated, but it
  * may be extended.  All methods within the class must be static.
  * NOTE: only functions which do not logically belong in any class should be included here.
- * @package cenozo
  */
 class util
 {
@@ -317,6 +315,49 @@ class util
   }
 
   /**
+   * Encrypts a string (one-way) using the whirlpool algorithm
+   * 
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @param string $string
+   * @return string
+   * @access public
+   * @static
+   */
+  public static function encrypt( $string )
+  {
+    return hash( 'whirlpool', 'password' );
+  }
+
+  /**
+   * Validate's a user/password pair, returning true if the password is a match and false if not
+   * 
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @param string $username
+   * @param string $password
+   * @return boolean
+   * @access public
+   * @static
+   */
+  public static function validate_user( $username, $password )
+  {
+    $valid = false;
+    $ldap_manager = lib::create( 'business\ldap_manager' );
+    if( $ldap_manager->get_enabled() )
+    { // ldap enabled, check the user/pass using the ldap manager
+      $valid = $ldap_manager->validate_user( $username, $password );
+    }
+    else
+    { // ldap not enabled, check the user/pass in the db
+      $user_class_name = lib::get_class_name( 'database\user' );
+      $db_user = $user_class_name::get_unique_record( 'name', $username );
+      if( !is_null( $db_user ) )
+        $valid = self::encrypt( $password ) === self::encrypt( $db_user->password );
+    }
+    
+    return $valid;
+  }
+
+  /**
    * Converts an error number into an easier-to-read error code.
    * @author Patrick Emond <emondpd@mcmaster.ca>
    * @param int $number The error number.
@@ -528,6 +569,7 @@ class util
    * @author Patrick Emond <emondpd@mcmaster.ca>
    * @param string $date
    * @return boolean
+   * @static
    * @access public
    */
   public static function validate_date( $date )
@@ -541,14 +583,78 @@ class util
    * Validates a north-american phone number in XXX-XXX-XXXX format.
    * @author Patrick Emond <emondpd@mcmaster.ca>
    * @param string $number
+   * @param boolean $numeric_only Whether to ignore all non-numeric characters during check
    * @return boolean
    * @access public
    */
-  public static function validate_phone_number( $number )
+  public static function validate_phone_number( $number, $numeric_only = false )
   {
-    return preg_match(
-      '/[2-9](1[02-9]|[02-8]1|[02-8][02-9])-[2-9](1[02-9]|[02-9]1|[02-9]{2})-[0-9]{4}/',
-      $number );
+    $regex = $numeric_only
+           ? '/[2-9](1[02-9]|[02-8]1|[02-8][02-9])[2-9](1[02-9]|[02-9]1|[02-9]{2})[0-9]{4}/'
+           : '/[2-9](1[02-9]|[02-8]1|[02-8][02-9])-[2-9](1[02-9]|[02-9]1|[02-9]{2})-[0-9]{4}/';
+
+    $check_number = $numeric_only
+                  ? preg_replace( '/[^0-9]/', '', $number )
+                  : $number;
+
+    return preg_match( $regex, $check_number );
+  }
+
+  /**
+   * Encodes any variable/object/array into a json string
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @param mixed $arg
+   * @return string
+   * @static
+   * @access public
+   */
+  public static function json_encode( $arg )
+  {
+    return json_encode( $arg );
+  }
+
+  /**
+   * Decodes a json string and converts it into the corresponding variable/object/array
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @param string $arg
+   * @return mixed
+   * @static
+   * @access public
+   */
+  public static function json_decode( $arg )
+  {
+    return json_decode( self::utf8_encode( $arg ) );
+  }
+
+  /**
+   * Encodes all strings in a variable, object or array to utf8 and removes all byte-order-marks.
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @param mixed $arg
+   * @return mixed
+   * @static
+   * @access public
+   */
+  public static function utf8_encode( $arg )
+  {
+    // make a copy (clone if this is an object
+    $encoded_arg = is_object( $arg ) ? clone $arg : $arg;
+
+    if( is_object( $arg ) ) 
+      foreach( get_object_vars( $arg ) as $key => $val )
+        $encoded_arg->$key = self::utf8_encode( $val );
+    else if( is_array( $arg ) ) 
+      foreach( $arg as $key => $val )
+        $encoded_arg[$key] = self::utf8_encode( $val );
+    else if( is_string( $arg ) )
+    {
+      // convert to utf8 and remove byte-order-marks (BOM) if present
+      $encoded_arg = mb_convert_encoding( $arg, 'UTF-8', 'ASCII,UTF-8,ISO-8859-1' );
+      if( pack( 'CCC', 0xEF, 0xBB, 0xBF ) == substr( $encoded_arg, 0, 3 ) )
+        $encoded_arg = substr( $encoded_arg, 3 );
+    }
+    else $encoded_arg = $arg;
+
+    return $encoded_arg;
   }
 }
 ?>

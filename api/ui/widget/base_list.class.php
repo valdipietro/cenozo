@@ -3,7 +3,6 @@
  * base_list.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -19,7 +18,6 @@ use cenozo\lib, cenozo\log;
  * methods: determine_<subject>_list() and determine_<subject>_count(), where <subject> is
  * the record type being listed, to override the basic functionality performed by this class.
  * @abstract
- * @package cenozo\ui
  */
 abstract class base_list extends \cenozo\ui\widget implements actionable
 {
@@ -59,8 +57,11 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
 
     // if the viewable, addable or removable properties have been requested then make sure
     // the appropriate operations are available
-    if( $this->viewable ) $this->viewable =
-      $operation_class_name::get_operation( 'widget', $this->get_subject(), 'view' );
+    if( $this->viewable )
+    {
+      $this->viewable = $session->is_allowed(
+        $operation_class_name::get_operation( 'widget', $this->get_subject(), 'view' ) );
+    }
 
     if( $this->addable )
     {
@@ -177,16 +178,17 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
     }
 
     // determine the record count and list
+    $count_mod = clone $modifier;
     $method_name = 'determine_'.$this->get_subject().'_count';
     $this->record_count = $this->parent && method_exists( $this->parent, $method_name )
-                        ? $this->parent->$method_name( $modifier )
-                        : $this->determine_record_count( $modifier );
+                        ? $this->parent->$method_name( $count_mod )
+                        : $this->determine_record_count( $count_mod );
 
     // make sure the page is valid, then set the rows array based on the page
-    $max_page = ceil( $this->record_count / $this->items_per_page );
-    if( 1 > $max_page ) $max_page = 1; // lower limit
+    $this->max_page = ceil( $this->record_count / $this->items_per_page );
+    if( 1 > $this->max_page ) $this->max_page = 1; // lower limit
     if( 1 > $this->page ) $this->page = 1; // lower limit
-    if( $this->page > $max_page ) $this->page = $max_page; // upper limit
+    if( $this->page > $this->max_page ) $this->page = $this->max_page; // upper limit
     
     // if there is a rank, datetime, date or time column set it as the default sort column
     if( !$this->sort_column )
@@ -197,7 +199,7 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
       $time_column = NULL;
       foreach( $this->columns as $name => $column )
       {
-        if( !array_key_exists( 'sortable', $column ) || $column['sortable'] )
+        if( array_key_exists( 'sortable', $column ) && $column['sortable'] )
         {
           if( preg_match( '/rank/', $name ) ) $rank_column = $name;
           else if( preg_match( '/datetime/', $name ) ) $datetime_column = $name;
@@ -237,20 +239,6 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
       $this->parent && method_exists( $this->parent, $method_name )
       ? $this->parent->$method_name( $modifier )
       : $this->determine_record_list( $modifier );
-
-    // define all template variables for this widget
-    $this->set_variable( 'checkable', $this->checkable );
-    $this->set_variable( 'viewable', $this->viewable );
-    $this->set_variable( 'addable', $this->addable );
-    $this->set_variable( 'removable', $this->removable );
-    $this->set_variable( 'items_per_page', $this->items_per_page );
-    $this->set_variable( 'number_of_items', $this->record_count );
-    $this->set_variable( 'columns', $this->columns );
-    $this->set_variable( 'page', $this->page );
-    $this->set_variable( 'sort_column', $this->sort_column );
-    $this->set_variable( 'sort_desc', $this->sort_desc );
-    $this->set_variable( 'restrictions', $this->restrictions );
-    $this->set_variable( 'max_page', $max_page );
   }
   
   /**
@@ -263,6 +251,20 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
   {
     parent::execute();
 
+    // define all template variables for this widget
+    $this->set_variable( 'checkable', $this->checkable );
+    $this->set_variable( 'viewable', $this->viewable );
+    $this->set_variable( 'addable', $this->addable );
+    $this->set_variable( 'removable', $this->removable );
+    $this->set_variable( 'disable_sorting', $this->disable_sorting );
+    $this->set_variable( 'items_per_page', $this->items_per_page );
+    $this->set_variable( 'number_of_items', $this->record_count );
+    $this->set_variable( 'columns', $this->columns );
+    $this->set_variable( 'page', $this->page );
+    $this->set_variable( 'sort_column', $this->sort_column );
+    $this->set_variable( 'sort_desc', $this->sort_desc );
+    $this->set_variable( 'restrictions', $this->restrictions );
+    $this->set_variable( 'max_page', $this->max_page );
     $this->set_variable( 'rows', $this->rows );
     $this->set_variable( 'actions', $this->actions );
   }
@@ -280,9 +282,9 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
    * @return int
    * @access protected
    */
-  protected function determine_record_count( $modifier = NULL )
+  public function determine_record_count( $modifier = NULL )
   {
-    if( $this->parent )
+    if( $this->parent && method_exists( $this->parent, 'get_record' ) )
     {
       $method_name = 'get_'.$this->get_subject().'_count';
       return $this->parent->get_record()->$method_name( $modifier );
@@ -307,9 +309,9 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
    * @return array( record )
    * @access protected
    */
-  protected function determine_record_list( $modifier = NULL )
+  public function determine_record_list( $modifier = NULL )
   {
-    if( $this->parent )
+    if( $this->parent && method_exists( $this->parent, 'get_record' ) )
     {
       $method_name = 'get_'.$this->get_subject().'_list';
       return $this->parent->get_record()->$method_name( $modifier );
@@ -333,6 +335,17 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
   }
 
   /**
+   * Get whether items in the list can be checked/selected.
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @return boolean
+   * @access public
+   */
+  public function get_checkable()
+  {
+    return $this->checkable;
+  }
+
+  /**
    * Set whether items in the list can be checked/selected.
    * @author Patrick Emond <emondpd@mcmaster.ca>
    * @param boolean $enable
@@ -347,6 +360,17 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
   }
 
   /**
+   * Get whether items in the list can be viewed.
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @return boolean
+   * @access public
+   */
+  public function get_viewable()
+  {
+    return $this->viewable;
+  }
+
+  /**
    * Set whether items in the list can be viewed.
    * @author Patrick Emond <emondpd@mcmaster.ca>
    * @param boolean $enable
@@ -355,6 +379,17 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
   public function set_viewable( $enable )
   {
     $this->viewable = $enable;
+  }
+
+  /**
+   * Get whether items in the list can be added.
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @return boolean
+   * @access public
+   */
+  public function get_addable()
+  {
+    return $this->addable;
   }
 
   /**
@@ -369,6 +404,17 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
   }
 
   /**
+   * Get whether items in the list can be removed.
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @return boolean
+   * @access public
+   */
+  public function get_removable()
+  {
+    return $this->removable;
+  }
+
+  /**
    * Set whether items in the list can be removed.
    * @author Patrick Emond <emondpd@mcmaster.ca>
    * @param boolean $enable
@@ -377,6 +423,28 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
   public function set_removable( $enable )
   {
     $this->removable = $enable;
+  }
+  
+  /**
+   * Gets whether sorting has been disabled for this list
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @return boolean
+   * @access public
+   */
+  public function get_disable_sorting()
+  {
+    return $this->disable_sorting;
+  }
+
+  /**
+   * Set whether sorting is disabled for this list
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @param boolean $enable
+   * @access public
+   */
+  public function set_disable_sorting( $enable )
+  {
+    $this->disable_sorting = $enable;
   }
   
   /**
@@ -532,6 +600,13 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
   private $page = 1;
   
   /**
+   * The maximum number of pages required to display all records.
+   * @var int
+   * @access private
+   */
+  private $max_page = 0;
+  
+  /**
    * Which column to sort by, or none if set to an empty string.
    * @var string
    * @access private
@@ -587,6 +662,13 @@ abstract class base_list extends \cenozo\ui\widget implements actionable
    * @access private
    */
   private $removable = true;
+  
+  /**
+   * Whether to deny sorting of any columns
+   * @var boolean
+   * @access private
+   */
+  private $disable_sorting = false;
   
   /**
    * An array of columns.

@@ -3,7 +3,6 @@
  * user_new.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -14,7 +13,6 @@ use cenozo\lib, cenozo\log;
  * push: user new
  *
  * Create a new user.
- * @package cenozo\ui
  */
 class user_new extends base_new
 {
@@ -30,14 +28,14 @@ class user_new extends base_new
   }
 
   /**
-   * Processes arguments, preparing them for the operation.
+   * Sets up the operation with any pre-execution instructions that may be necessary.
    * 
    * @author Patrick Emond <emondpd@mcmaster.ca>
    * @access protected
    */
-  protected function prepare()
+  protected function setup()
   {
-    parent::prepare();
+    parent::setup();
 
     $columns = $this->get_argument( 'columns' );
 
@@ -88,8 +86,6 @@ class user_new extends base_new
    */
   protected function execute()
   {
-    parent::execute();
-
     $columns = $this->get_argument( 'columns' );
 
     // add the user to ldap
@@ -110,8 +106,15 @@ class user_new extends base_new
 
     if( !is_null( $this->site_id ) && !is_null( $this->role_id ) )
     { // add the initial role to the new user
+      $util_class_name = lib::get_class_name( 'util' );
       $user_class_name = lib::get_class_name( 'database\user' );
+
       $db_user = $user_class_name::get_unique_record( 'name', $columns['name'] );
+      if( $user_class_name::column_exists( 'password' ) )
+      {
+        $db_user->password = $util_class_name::encrypt( 'password' );
+        $db_user->save();
+      }
       $db_access = lib::create( 'database\access' );
       $db_access->user_id = $db_user->id;
       $db_access->site_id = $this->site_id;

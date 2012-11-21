@@ -1,0 +1,76 @@
+====================================================================================================
+0.1.8
+====================================================================================================
+
+* Making use of an LDAP server optional
+  - if LDAP is not enabled passwords are stored in the database using whirlpool hash encryption
+
+====================================================================================================
+0.1.7
+====================================================================================================
+
+* Adding timesec and datetimesec types to base_view
+  - timesec is the same as time but seconds can be edited and minutes are not rounded
+  - datetimesec is the same as datetime but seconds can be edited and minutes are not rounded
+
+* Adding report caching
+  - reports can now be set to cache
+  - any cacheble report is cached every time the report is run, or when no cache exists for the
+    current day
+  - reports can be force-updated
+
+* Removing defunct "site or province" option from reports
+
+* Adding new change column methods to modifier
+  - change_where_column() allows where column names to be changed
+  - change_group_column() allows group column names to be changed
+  - change_order_column() allows order column names to be changed
+
+====================================================================================================
+0.1.6
+====================================================================================================
+
+* Changing warning dialogs to look less like error dialogs
+
+* Orphan tables now added to select queries
+  - record::select() now adds any tables included in the modifier argument to the table list
+
+* Adding remove_row() and remove_column() methods to business\report class
+  - this is now used by the quota report
+
+* Changing the table list behaviour in record::select()
+  - if no foreign key is found to a table in the modifier it is still added to the table list
+
+* Changing API documentation to apigen (apigen.org)
+
+* Adding new "disable_sorting" option to the base_list widget
+  - by default this is set to false
+  - if enabled sortable columns will still appear sortable (ie: still appear as buttons) but when
+    clicked a message will appear to the user indicating that sorting has been disabled
+
+* Making status and shortcut items "float"
+  - when scrolling the clock, voip status indicators and buttons will always appear "on top"
+
+* Various bug fixes
+
+====================================================================================================
+0.1.5
+====================================================================================================
+
+* Adding a get_version utility which prints the current version
+
+* Added backtrace to warnings
+
+* Various bug fixes
+
+====================================================================================================
+0.1.4
+====================================================================================================
+
+* Improved how widget parenting works
+  - The parent no longer needs to have a get_record() method
+
+* Changed access to some methods and added in missing API documentation
+  - all determine_record_count() and determine_record_list() methods are now public
+
+* Various bug fixes

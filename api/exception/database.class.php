@@ -3,7 +3,6 @@
  * database.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\exception
  * @filesource
  */
 
@@ -15,7 +14,6 @@ use cenozo\lib, cenozo\log;
  *
  * All exceptions which are due to the database, including connection errors and queries, use this
  * class to throw exceptions.
- * @package cenozo\exception
  */
 class database extends base_exception
 {
@@ -31,7 +29,7 @@ class database extends base_exception
   public function __construct( $message, $sql = NULL, $context, $previous = NULL )
   {
     $this->sql = $sql;
-    $message .= is_null( $this->sql ) ? '' : ' for query "'.$sql.'"';
+    $message .= is_null( $this->sql ) ? '' : ' for query'."\n".trim( $sql );
     parent::__construct( $message, $context, $previous );
   }
   

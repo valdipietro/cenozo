@@ -3,7 +3,6 @@
  * ldap_manager.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\business
  * @filesource
  */
 
@@ -12,8 +11,6 @@ use cenozo\lib, cenozo\log;
 
 /**
  * Manages LDAP entries
- * 
- * @package cenozo\business
  */
 class ldap_manager extends \cenozo\singleton
 {
@@ -26,6 +23,7 @@ class ldap_manager extends \cenozo\singleton
   protected function __construct()
   {
     $setting_manager = lib::create( 'business\setting_manager' );
+    $this->enabled = true === $setting_manager->get_setting( 'ldap', 'enabled' );
     $this->server = $setting_manager->get_setting( 'ldap', 'server' );
     $this->port = $setting_manager->get_setting( 'ldap', 'port' );
     $this->base = $setting_manager->get_setting( 'ldap', 'base' );
@@ -56,6 +54,7 @@ class ldap_manager extends \cenozo\singleton
    */
   protected function connect()
   {
+    if( !$this->enabled ) return;
     if( is_resource( $this->resource ) ) return;
 
     $this->resource = ldap_connect( $this->server, $this->port );
@@ -84,6 +83,7 @@ class ldap_manager extends \cenozo\singleton
    */
   public function new_user( $username, $first_name, $last_name, $password )
   {
+    if( !$this->enabled ) return;
     $util_class_name = lib::get_class_name( 'util' );
     $this->connect();
 
@@ -115,6 +115,7 @@ class ldap_manager extends \cenozo\singleton
    */
   public function delete_user( $username )
   {
+    if( !$this->enabled ) return;
     $this->connect();
     
     $dn = sprintf( 'uid=%s,ou=Users,%s', $username, $this->base );
@@ -135,6 +136,7 @@ class ldap_manager extends \cenozo\singleton
    */
   public function validate_user( $username, $password )
   {
+    if( !$this->enabled ) return false;
     $this->connect();
 
     $search = @ldap_search( $this->resource, $this->base, sprintf( '(&(uid=%s))', $username ) );
@@ -173,6 +175,7 @@ class ldap_manager extends \cenozo\singleton
    */
   public function set_user_password( $username, $password )
   {
+    if( !$this->enabled ) return;
     $util_class_name = lib::get_class_name( 'util' );
     $this->connect();
 
@@ -198,6 +201,15 @@ class ldap_manager extends \cenozo\singleton
         ldap_error( $this->resource ), ldap_errno( $this->resource ) );
   }
 
+  /** 
+   * Whether LDAP is enabled.
+   * 
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @return boolean
+   * @access public
+   */
+  public function get_enabled() { return $this->enabled; }
+
   /**
    * The PHP LDAP resource.
    * @var resource
@@ -205,6 +217,12 @@ class ldap_manager extends \cenozo\singleton
    */
   protected $resource = NULL;
   
+  /** Whether LDAP is enabled.
+   * @var boolean
+   * @access private
+   */
+  private $enabled = false;
+
   /**
    * The LDAP server to connect to.
    * @var string

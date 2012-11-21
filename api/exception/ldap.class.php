@@ -3,7 +3,6 @@
  * ldap.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\exception
  * @filesource
  */
 
@@ -14,7 +13,6 @@ use cenozo\lib, cenozo\log;
  * ldap: ldap file exception
  * 
  * This exception is thrown when trying to include a file that doesn't exist
- * @package cenozo\exception
  */
 class ldap extends base_exception
 {
@@ -44,6 +42,19 @@ class ldap extends base_exception
   public function is_already_exists()
   {
     $number = LDAP_CENOZO_BASE_ERRNO + self::convert_context( 68 );
+    return $this->get_number() == $number;
+  }
+  
+  /**
+   * Returns whether the exception was thrown because of refering to a user which doesn't exist.
+   * 
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @return boolean
+   * @access public
+   */
+  public function is_does_not_exist()
+  {
+    $number = LDAP_CENOZO_BASE_ERRNO + self::convert_context( 32 );
     return $this->get_number() == $number;
   }
   

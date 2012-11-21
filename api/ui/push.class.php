@@ -3,7 +3,6 @@
  * push.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -12,8 +11,6 @@ use cenozo\lib, cenozo\log;
 
 /**
  * The base class of all push operations
- * 
- * @package cenozo\ui
  */
 abstract class push extends operation
 {
@@ -103,7 +100,7 @@ abstract class push extends operation
             $subject = substr( $column_name, 0, -3 );
             $class_name = lib::get_class_name( 'database\\'.$subject );
             $args['noid']['columns'][$subject] =
-              $class_name::get_unique_from_primary_key( $column_value );
+              $column_value ? $class_name::get_unique_from_primary_key( $column_value ) : NULL;
             unset( $args['columns'][$column_name] );
           }
         }
@@ -115,7 +112,7 @@ abstract class push extends operation
         $subject = 'id' == $column_name ? $this->get_subject() : substr( $column_name, 0, -3 );
         $class_name = lib::get_class_name( 'database\\'.$subject );
         $args['noid'][$subject] =
-          $class_name::get_unique_from_primary_key( $column_value );
+          $column_value ? $class_name::get_unique_from_primary_key( $column_value ) : NULL;
         unset( $args[$column_name] );
       }
     }
@@ -231,6 +228,7 @@ abstract class push extends operation
   protected function send_machine_request()
   {
     $cenozo_manager = lib::create( 'business\cenozo_manager', $this->machine_request_url );
+    $cenozo_manager->use_machine_credentials( $this->machine_credentials );
     $cenozo_manager->push( $this->get_subject(), $this->get_name(), $this->machine_arguments );
   }
 
@@ -261,6 +259,17 @@ abstract class push extends operation
   }
 
   /**
+   * Whether to replace the user with machine credentials when sending machine requests.
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @param boolean $use
+   * @access protected
+   */
+  protected function use_machine_credentials( $use )
+  {
+    $this->machine_credentials = (bool) $use;
+  }
+
+  /**
    * The url to send machine requests to.
    * @var string
    * @access private
@@ -287,5 +296,12 @@ abstract class push extends operation
    * @access protected
    */
   protected $machine_arguments = array();
+
+  /**
+   * Whether to use the machine's credentials when sending a machine request
+   * @var boolean
+   * @access private
+   */
+  private $machine_credentials = false;
 }
 ?>

@@ -3,7 +3,6 @@
  * self_password.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -12,8 +11,6 @@ use cenozo\lib, cenozo\log;
 
 /**
  * widget self password
- * 
- * @package cenozo\ui
  */
 class self_password extends \cenozo\ui\widget
 {
@@ -55,9 +52,9 @@ class self_password extends \cenozo\ui\widget
     parent::setup();
     
     // if the current password is "password" then mark the widget as the first password change
-    $ldap_manager = lib::create( 'business\ldap_manager' );
+    $util_class_name = lib::get_class_name( 'util' );
     $this->set_variable( 'first_password',
-      $ldap_manager->validate_user(
+      $util_class_name::validate_user( 
         lib::create( 'business\session' )->get_user()->name, 'password' ) );
   }
 }

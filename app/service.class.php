@@ -79,9 +79,10 @@ final class service
         'error_message' => $e->getMessage() );
 
       // send the error in json format in an http error header
+      $util_class_name = lib::get_class_name( 'util' );
       \HttpResponse::status( 400 );
       \HttpResponse::setContentType( 'application/json' );
-      \HttpResponse::setData( json_encode( $result_array ) );
+      \HttpResponse::setData( $util_class_name::json_encode( $result_array ) );
       \HttpResponse::send();
       die;
     }
@@ -117,7 +118,9 @@ final class service
     // make sure all paths are valid
     foreach( $SETTINGS['path'] as $key => $path )
       if( 'COOKIE' != $key &&
+          'TEMP' != $key &&
           'TEMPLATE_CACHE' != $key &&
+          'REPORT_CACHE' != $key &&
           !( is_null( $path ) || is_file( $path ) || is_link( $path ) || is_dir( $path ) ) )
         die( sprintf( 'Error, path for %s (%s) is invalid!', $key, $path ) );
 
@@ -126,6 +129,7 @@ final class service
     $this->settings['path']['CENOZO_TPL'] = $this->settings['path']['CENOZO'].'/tpl';
 
     $this->settings['path']['API'] = $this->settings['path']['APPLICATION'].'/api';
+    $this->settings['path']['DOC'] = $this->settings['path']['APPLICATION'].'/doc';
     $this->settings['path']['TPL'] = $this->settings['path']['APPLICATION'].'/tpl';
 
     // the web directory cannot be extended
@@ -239,7 +243,7 @@ final class service
     {
       if( 'push' == $this->operation_type )
       {
-        $json_output = json_encode( $result_array );
+        $json_output = $util_class_name::json_encode( $result_array );
         header( 'Content-Type: application/json' );
         header( 'Content-Length: '.strlen( $json_output ) );
         print $json_output;
@@ -249,7 +253,7 @@ final class service
         if( 'json' == $output['type'] )
         {
           $result_array['data'] = $output['data'];
-          $json_output = json_encode( $result_array );
+          $json_output = $util_class_name::json_encode( $result_array );
           header( 'Content-Type: application/json' );
           header( 'Content-Length: '.strlen( $json_output ) );
           print $json_output;
@@ -281,7 +285,7 @@ final class service
           'push' == $this->operation_type ||
           'pull' == $this->operation_type && ( !isset( $output['type'] ) || 'json' == $output['type'] ) )
       {
-        $util_class_name::send_http_error( json_encode( $result_array ) );
+        $util_class_name::send_http_error( $util_class_name::json_encode( $result_array ) );
       }
       else
       {
@@ -357,7 +361,9 @@ final class service
     $util_class_name = lib::get_class_name( 'util' );
 
     if( is_null( $this->operation_name ) )
-      throw lib::create( 'exception\runtime', 'Unable to determine operation name.', __METHOD__ );
+      throw lib::create( 'exception\notice',
+        'The system did not recognize your request, please refresh or restart your browser.',
+        __METHOD__ );
       
     $class_name = sprintf( 'ui\%s\%s', $this->operation_type, $this->operation_name );
     $operation = lib::create( $class_name, $this->arguments );

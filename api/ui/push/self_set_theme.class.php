@@ -3,7 +3,6 @@
  * self_set_theme.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -15,7 +14,6 @@ use cenozo\lib, cenozo\log;
  *
  * Changes the current user's theme.
  * Arguments must include 'theme'.
- * @package cenozo\ui
  */
 class self_set_theme extends \cenozo\ui\push
 {
@@ -28,26 +26,19 @@ class self_set_theme extends \cenozo\ui\push
   public function __construct( $args )
   {
     parent::__construct( 'self', 'set_theme', $args );
-    $this->theme_name = $this->get_argument( 'theme' ); // must exist
   }
   
   /**
-   * Executes the push.
+   * This method executes the operation's purpose.
+   * 
    * @author Patrick Emond <emondpd@mcmaster.ca>
    * @access protected
    */
-  protected function finish()
+  protected function execute()
   {
-    $session = lib::create( 'business\session' );
-    $session->get_user()->theme = $this->theme_name;
-    $session->get_user()->save();
+    $db_user = lib::create( 'business\session' )->get_user();
+    $db_user->theme = $this->get_argument( 'theme' );
+    $db_user->save();
   }
-
-  /**
-   * The name of the theme to set.
-   * @var string
-   * @access protected
-   */
-  protected $theme_name = NULL;
 }
 ?>

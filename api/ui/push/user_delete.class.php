@@ -3,7 +3,6 @@
  * user_delete.class.php
  * 
  * @author Patrick Emond <emondpd@mcmaster.ca>
- * @package cenozo\ui
  * @filesource
  */
 
@@ -12,8 +11,6 @@ use cenozo\lib, cenozo\log;
 
 /**
  * push: user delete
- * 
- * @package cenozo\ui
  */
 class user_delete extends base_delete
 {
@@ -45,6 +42,31 @@ class user_delete extends base_delete
         sprintf( 'User account "%s" cannot be deleted because it is still in use.',
                  $this->get_record()->name ),
         __METHOD__ );
+  }
+
+  /**
+   * This method executes the operation's purpose.
+   * 
+   * @author Patrick Emond <emondpd@mcmaster.ca>
+   * @access protected
+   */
+  protected function execute()
+  {
+    $name = $this->get_record()->name;
+
+    parent::execute();
+
+    // remove the user from ldap
+    $ldap_manager = lib::create( 'business\ldap_manager' );
+    try
+    {
+      $ldap_manager->delete_user( $name );
+    }
+    catch( \cenozo\exception\ldap $e )
+    {
+      // catch user not found exceptions, no need to report them
+      if( !$e->is_does_not_exist() ) throw $e;
+    }
   }
 }
 ?>
